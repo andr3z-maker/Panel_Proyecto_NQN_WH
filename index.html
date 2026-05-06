@@ -739,7 +739,40 @@ async function saveTask() {
 async function deleteTask(id) {
   const t = tasks.find(x => x.id === id);
   if (!t) return;
-  if (!confirm(`¿Eliminar la tarea "${t.nombre}"?\nTambién se eliminarán todas sus fotos.`)) return;
+  // Primera confirmación — modal personalizado
+  showConfirmDelete(t);
+}
+
+function showConfirmDelete(t) {
+  // Crear overlay de confirmación
+  let overlay = document.getElementById('confirm-delete-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'confirm-delete-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(33,43,84,0.6);display:flex;align-items:center;justify-content:center;z-index:2000;backdrop-filter:blur(2px);';
+    document.body.appendChild(overlay);
+  }
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:12px;padding:28px;width:320px;box-shadow:0 8px 32px rgba(33,43,84,0.2);">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:#7a85a8;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;">Eliminar tarea</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:#212B54;margin-bottom:8px;">"${t.nombre}"</div>
+      <div style="font-size:13px;color:#7a85a8;margin-bottom:6px;">Esta acción eliminará la tarea y todas sus fotos asociadas.</div>
+      <div style="font-size:13px;color:#E51863;font-weight:600;margin-bottom:20px;">Esta acción no se puede deshacer.</div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="closeConfirmDelete()" style="flex:1;background:#f4f6fb;border:1px solid #d8dde8;color:#212B54;padding:10px;border-radius:6px;cursor:pointer;font-size:13px;font-family:'Barlow',sans-serif;font-weight:500;">Cancelar</button>
+        <button onclick="confirmDeleteTask(${t.id})" style="flex:1;background:#E51863;border:none;color:#fff;padding:10px;border-radius:6px;cursor:pointer;font-size:13px;font-family:'Barlow',sans-serif;font-weight:600;">¿Está seguro? Eliminar</button>
+      </div>
+    </div>`;
+  overlay.style.display = 'flex';
+}
+
+function closeConfirmDelete() {
+  const overlay = document.getElementById('confirm-delete-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+async function confirmDeleteTask(id) {
+  closeConfirmDelete();
   try {
     checkRateLimit();
     const r = await safeFetch(`${SB_URL}/rest/v1/tareas?id=eq.${id}`, { method: 'DELETE', headers: SB_H });

@@ -683,6 +683,13 @@ function editTask(id) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+function resetForm() {
+  editingId = null;
+  document.getElementById('form-mode-title').textContent = 'Nueva tarea';
+  ['f-nombre','f-pip-ini','f-pip-fin','f-real-ini','f-real-fin','f-pct']
+    .forEach(id => document.getElementById(id).value = '');
+}
+
 
 /* =====================================================
    SUPABASE — CRUD TAREAS

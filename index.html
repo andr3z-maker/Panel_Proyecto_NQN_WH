@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel de Avance de Obra</title>
+
+<!-- ================================================
+     SECURITY HEADERS
+     ================================================ -->
+<!-- Content Security Policy: solo permite recursos de orígenes explícitos -->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src  'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com;
+  style-src   'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com;
+  font-src    'self' https://fonts.gstatic.com;
+  img-src     'self' data: blob: https://txlnrmnfdsxtvkhrrqli.supabase.co;
+  connect-src 'self' https://txlnrmnfdsxtvkhrrqli.supabase.co;
+  frame-ancestors 'none';
+  base-uri    'self';
+  form-action 'self';
+">
+<!-- Evita que el navegador adivine el tipo MIME -->
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<!-- Evita que la página se incruste en iframes de otros dominios -->
+<meta http-equiv="X-Frame-Options" content="DENY">
+<!-- Fuerza HTTPS y recuerda el dominio por 1 año -->
+<meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains">
+<!-- No envía el Referer a sitios externos -->
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<!-- Desactiva detección automática de teléfonos/emails -->
+<meta name="format-detection" content="telephone=no, email=no">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --navy:#212B54;--indigo:#273475;--violet:#752784;--pink:#AF1062;--rose:#E51863;--sky:#74B5DF;
+  --bg:#f4f6fb;--surface:#fff;--border:#d8dde8;--text:#212B54;--muted:#7a85a8;
+  --c-done:#1a7a3c;--c-progress:#752784;--c-late:#E51863;--c-none:#b0b8cc;
+}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.app{max-width:1200px;margin:0 auto;background:var(--bg);min-height:100vh;}
+
+/* HEADER */
+.header{background:var(--navy);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;}
+.header-title{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;letter-spacing:1.5px;color:#fff;text-transform:uppercase;}
+.header-sub{font-size:11px;color:var(--sky);margin-top:2px;}
+.toggle-btn{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.7);padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-family:'Barlow',sans-serif;transition:all 0.2s;}
+.toggle-btn.active{background:var(--rose);border-color:var(--rose);color:#fff;}
+.toggle-btn:hover:not(.active){background:rgba(255,255,255,0.18);}
+
+/* KPIs */
+.kpi-bar{display:grid;grid-template-columns:repeat(5,1fr);border-bottom:3px solid var(--sky);}
+.kpi{background:var(--surface);padding:12px 16px;text-align:center;border-right:1px solid var(--border);}
+.kpi:last-child{border-right:none;}
+.kpi-val{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:700;}
+.kpi-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-top:2px;}
+
+/* LAYOUT */
+.dashboard{padding:16px 24px;}
+.section-title{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.year-btn{background:var(--surface);border:1px solid var(--border);color:var(--navy);width:30px;height:30px;border-radius:6px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;font-weight:600;transition:all 0.15s;}
+.year-btn:hover{border-color:var(--indigo);color:var(--indigo);}
+.year-label{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--navy);min-width:52px;text-align:center;}
+
+/* GANTT */
+.gantt-wrap{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.gantt-head-row{display:grid;grid-template-columns:200px 1fr;}
+.gantt-head-label{background:#f9fafc;padding:8px 14px;font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.8px;display:flex;align-items:center;border-bottom:1px solid var(--border);}
+.months-header{display:flex;border-bottom:1px solid var(--border);}
+.grid-month{flex:1;text-align:center;font-size:10px;color:var(--muted);padding:6px 0;border-left:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;background:#f9fafc;letter-spacing:0.3px;}
+.gantt-row-wrap{display:grid;grid-template-columns:200px 1fr;border-top:1px solid var(--border);cursor:pointer;transition:background 0.15s;}
+.gantt-row-wrap:hover{background:#f0f3f9;}
+.gantt-row-wrap.sel{background:#eef1fa;}
+.task-name-cell{padding:10px 14px;font-size:13px;font-weight:500;color:var(--navy);display:flex;align-items:center;gap:8px;overflow:hidden;border-right:1px solid var(--border);}
+.status-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.task-name-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.gantt-timeline{position:relative;height:42px;}
+.legend{display:flex;gap:16px;margin-top:10px;flex-wrap:wrap;}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);}
+.legend-bar{width:24px;height:8px;border-radius:2px;}
+.no-tasks{padding:28px;text-align:center;color:var(--muted);font-size:13px;}
+
+/* DETAIL PANEL */
+.detail-panel{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px;margin-top:14px;}
+.detail-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--navy);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.detail-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
+.detail-field{background:var(--bg);border-radius:6px;padding:10px 14px;}
+.detail-field-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:4px;}
+.detail-field-val{font-size:14px;font-weight:500;color:var(--navy);}
+.pct-bar-wrap{background:var(--bg);border-radius:4px;height:7px;overflow:hidden;margin-bottom:16px;}
+.pct-bar-fill{height:100%;border-radius:4px;transition:width 0.5s;}
+
+/* FOTOS */
+.photos-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.photos-tabs{display:flex;gap:6px;}
+.photo-tab{padding:5px 16px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1.5px solid var(--border);color:var(--muted);background:var(--bg);transition:all 0.2s;}
+.photo-tab.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+.photos-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;}
+.photo-thumb{position:relative;width:100%;padding-top:75%;border-radius:6px;overflow:hidden;border:1px solid var(--border);}
+.photo-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;cursor:pointer;}
+.photo-thumb .del-btn{position:absolute;top:4px;right:4px;background:rgba(229,24,99,0.88);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;}
+.add-photo-btn{padding-top:75%;position:relative;border:2px dashed var(--border);border-radius:6px;cursor:pointer;background:var(--bg);transition:border-color 0.2s;}
+.add-photo-btn:hover{border-color:var(--indigo);}
+.add-photo-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;}
+.add-photo-icon{font-size:22px;color:var(--border);}
+.add-photo-label{font-size:12px;color:var(--muted);}
+.add-photo-sub{font-size:10px;color:var(--border);}
+
+/* LIGHTBOX */
+.lightbox{position:fixed;inset:0;background:rgba(33,43,84,0.93);display:flex;align-items:center;justify-content:center;z-index:9999;}
+.lightbox img{max-width:92vw;max-height:88vh;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,0.4);}
+.lightbox-close{position:fixed;top:18px;right:22px;background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:24px;cursor:pointer;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+.lightbox-close:hover{background:rgba(255,255,255,0.25);}
+
+/* STATUS PILL */
+.status-pill{font-size:12px;font-weight:600;padding:3px 12px;border-radius:12px;}
+
+/* ADMIN */
+.admin-view{padding:16px 24px;}
+.form-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px;margin-bottom:16px;}
+.form-title{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:600;color:var(--navy);margin-bottom:14px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-group{display:flex;flex-direction:column;gap:4px;}
+.form-group.full{grid-column:1/-1;}
+.form-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.7px;}
+.form-input{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:13px;color:var(--navy);font-family:'Barlow',sans-serif;transition:border-color 0.15s;}
+.form-input:focus{outline:none;border-color:var(--indigo);}
+.form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;}
+.btn-primary{background:var(--navy);border:none;color:#fff;padding:9px 20px;border-radius:6px;cursor:pointer;font-size:13px;font-family:'Barlow',sans-serif;font-weight:500;transition:background 0.15s;}
+.btn-primary:hover{background:var(--indigo);}
+.btn-secondary{background:var(--bg);border:1px solid var(--border);color:var(--navy);padding:9px 20px;border-radius:6px;cursor:pointer;font-size:13px;font-family:'Barlow',sans-serif;transition:all 0.15s;}
+.btn-secondary:hover{border-color:var(--indigo);color:var(--indigo);}
+.btn-sm{font-size:11px;padding:5px 14px;}
+.admin-top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+
+/* TABLE */
+.task-list-table{width:100%;border-collapse:collapse;font-size:12px;}
+.task-list-table th{text-align:left;padding:9px 12px;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:0.7px;border-bottom:1px solid var(--border);background:#f9fafc;font-weight:600;}
+.task-list-table td{padding:10px 12px;border-bottom:1px solid #f0f0f0;color:var(--navy);}
+.task-list-table tr:last-child td{border-bottom:none;}
+.task-list-table tr:hover td{background:#f9fafc;}
+.pct-pill{display:inline-block;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;}
+.edit-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:4px 12px;border-radius:4px;cursor:pointer;font-size:11px;font-family:'Barlow',sans-serif;transition:all 0.15s;}
+.edit-btn:hover{border-color:var(--indigo);color:var(--indigo);}
+.del-row-btn{background:none;border:1px solid transparent;color:var(--border);padding:4px 8px;border-radius:4px;cursor:pointer;font-size:13px;transition:all 0.15s;}
+.del-row-btn:hover{border-color:var(--rose);color:var(--rose);}
+
+/* LOGIN */
+.login-overlay{position:fixed;inset:0;background:rgba(33,43,84,0.6);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(2px);}
+.login-card{background:var(--surface);border-radius:12px;padding:30px 28px 24px;width:300px;box-shadow:0 8px 32px rgba(33,43,84,0.2);}
+.login-logo{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;}
+.login-title{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;color:var(--navy);margin-bottom:4px;}
+.login-sub{font-size:12px;color:var(--muted);margin-bottom:20px;}
+.login-err{font-size:12px;color:var(--rose);margin-top:8px;min-height:16px;}
+
+/* EXPORT */
+.btn-export{background:var(--surface);border:1px solid var(--border);color:var(--navy);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-family:'Barlow',sans-serif;font-weight:500;display:flex;align-items:center;gap:6px;transition:all 0.15s;margin-left:auto;}
+.btn-export:hover{border-color:var(--indigo);color:var(--indigo);}
+.paper-opt{display:flex;align-items:center;gap:12px;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;transition:all 0.15s;}
+.paper-opt:hover{border-color:var(--indigo);background:#f4f6fb;}
+.paper-opt input{flex-shrink:0;}
+
+
+@media (min-width:1400px){
+  .app{max-width:100%;}
+  .kpi-val{font-size:36px;}
+  .header-title{font-size:28px;}
+  .gantt-timeline{height:50px;}
+}
+@media (max-width:700px){
+  .detail-grid{grid-template-columns:1fr 1fr;}
+  .form-grid{grid-template-columns:1fr;}
+  .kpi-bar{grid-template-columns:repeat(3,1fr);}
+  .kpi:nth-child(4),.kpi:nth-child(5){border-top:1px solid var(--border);}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div>
+      <div class="header-title">Panel de Avance de Obra</div>
+      <div class="header-sub" id="clock">--</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="toggle-btn active" id="btn-dashboard" onclick="setView('dashboard')">Tablero</button>
+      <button class="toggle-btn" id="btn-admin" onclick="tryAdmin()">Admin</button>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-bar">
+    <div class="kpi"><div class="kpi-val" style="color:var(--indigo)" id="kpi-total">—</div><div class="kpi-label">Tareas</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--c-done)" id="kpi-done">—</div><div class="kpi-label">Completadas</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--c-progress)" id="kpi-prog">—</div><div class="kpi-label">En curso</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--c-late)" id="kpi-late">—</div><div class="kpi-label">Retrasadas</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--rose)" id="kpi-pct">—</div><div class="kpi-label">Avance global</div></div>
+  </div>
+
+  <!-- DASHBOARD VIEW -->
+  <div id="view-dashboard">
+    <div class="dashboard">
+      <div class="toolbar">
+        <div class="section-title" style="margin:0;">Gantt</div>
+        <button class="year-btn" onclick="changeYear(-1)">&#8249;</button>
+        <div class="year-label" id="year-label">2026</div>
+        <button class="year-btn" onclick="changeYear(1)">&#8250;</button>
+        <button class="btn-export" onclick="openExportModal()" title="Exportar PDF para plotter">
+          <span>&#128438;</span> Exportar PDF
+        </button>
+      </div>
+      <div class="gantt-wrap">
+        <div class="gantt-head-row">
+          <div class="gantt-head-label">Tarea</div>
+          <div class="months-header" id="months-header"></div>
+        </div>
+        <div id="gantt-rows"></div>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-bar" style="background:#74B5DF55;border:1px solid #74B5DF;"></div>Planificado</div>
+        <div class="legend-item"><div class="legend-bar" style="background:var(--c-done);"></div>Completado</div>
+        <div class="legend-item"><div class="legend-bar" style="background:var(--c-progress);"></div>En curso</div>
+        <div class="legend-item"><div class="legend-bar" style="background:var(--c-late);"></div>Retrasado</div>
+        <div class="legend-item"><div class="legend-bar" style="background:var(--c-none);"></div>Sin iniciar</div>
+      </div>
+      <div class="detail-panel" id="detail-panel" style="display:none;"></div>
+    </div>
+  </div>
+
+  <!-- ADMIN VIEW -->
+  <div id="view-admin" style="display:none;">
+    <div class="admin-view">
+      <div class="form-card">
+        <div class="form-title" id="form-mode-title">Nueva tarea</div>
+        <div class="form-grid">
+          <div class="form-group full">
+            <div class="form-label">Nombre de la tarea</div>
+            <input class="form-input" id="f-nombre" type="text" placeholder="ej. Instalación de cañerías">
+          </div>
+          <div class="form-group">
+            <div class="form-label">Inicio planificado</div>
+            <input class="form-input" id="f-pip-ini" type="month">
+          </div>
+          <div class="form-group">
+            <div class="form-label">Fin planificado</div>
+            <input class="form-input" id="f-pip-fin" type="month">
+          </div>
+          <div class="form-group">
+            <div class="form-label">Inicio real</div>
+            <input class="form-input" id="f-real-ini" type="month">
+          </div>
+          <div class="form-group">
+            <div class="form-label">Fin real</div>
+            <input class="form-input" id="f-real-fin" type="month">
+          </div>
+          <div class="form-group">
+            <div class="form-label">Cumplimiento %</div>
+            <input class="form-input" id="f-pct" type="number" min="0" max="100" placeholder="0 – 100">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-secondary" onclick="resetForm()">Cancelar</button>
+          <button class="btn-primary" onclick="saveTask()">Guardar tarea</button>
+        </div>
+      </div>
+      <div class="admin-top-bar">
+        <div class="section-title" style="margin:0;">Tareas registradas</div>
+        <button class="btn-secondary btn-sm" onclick="logout()">Cerrar sesión</button>
+      </div>
+      <div class="gantt-wrap">
+        <table class="task-list-table">
+          <thead>
+            <tr>
+              <th>Tarea</th>
+              <th>Plan ini</th><th>Plan fin</th>
+              <th>Real ini</th><th>Real fin</th>
+              <th>%</th><th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="task-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT MODAL -->
+<div id="export-overlay" style="display:none;" class="login-overlay">
+  <div class="login-card" style="width:340px;">
+    <div class="login-logo">Gantt — Año <span id="exp-year-label"></span></div>
+    <div class="login-title">Exportar PDF</div>
+    <div class="login-sub">Seleccioná el tamaño de papel para el plotter</div>
+    <div id="paper-options" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+      <label class="paper-opt" onclick="selectPaper('A0')">
+        <input type="radio" name="paper" value="A0" style="accent-color:var(--navy);">
+        <div>
+          <div style="font-weight:600;font-size:14px;color:var(--navy);">A0</div>
+          <div style="font-size:11px;color:var(--muted);">1189 × 841 mm — máxima resolución</div>
+        </div>
+      </label>
+      <label class="paper-opt" onclick="selectPaper('A1')">
+        <input type="radio" name="paper" value="A1" style="accent-color:var(--navy);" checked>
+        <div>
+          <div style="font-weight:600;font-size:14px;color:var(--navy);">A1</div>
+          <div style="font-size:11px;color:var(--muted);">841 × 594 mm — recomendado</div>
+        </div>
+      </label>
+      <label class="paper-opt" onclick="selectPaper('A3')">
+        <input type="radio" name="paper" value="A3" style="accent-color:var(--navy);">
+        <div>
+          <div style="font-weight:600;font-size:14px;color:var(--navy);">A3</div>
+          <div style="font-size:11px;color:var(--muted);">420 × 297 mm — impresora estándar</div>
+        </div>
+      </label>
+    </div>
+    <div id="export-status" style="font-size:12px;color:var(--muted);min-height:16px;margin-bottom:10px;text-align:center;"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn-secondary" style="flex:1;" onclick="closeExportModal()">Cancelar</button>
+      <button class="btn-primary" style="flex:1;" id="btn-do-export" onclick="doExportPDF()">Generar PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN OVERLAY -->
+<div id="login-overlay" style="display:none;" class="login-overlay">
+  <div class="login-card">
+    <div class="login-logo">Panel de Obra</div>
+    <div class="login-title">Acceso Admin</div>
+    <div class="login-sub">Ingresá la contraseña para continuar</div>
+    <input class="form-input" id="pwd-input" type="password" placeholder="Contraseña" style="width:100%;" onkeydown="if(event.key==='Enter')doLogin()">
+    <div class="login-err" id="login-err"></div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn-secondary" style="flex:1;" onclick="closeLogin()">Cancelar</button>
+      <button class="btn-primary" style="flex:1;" onclick="doLogin()">Ingresar</button>
+    </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div id="lightbox" style="display:none;" class="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">&#10005;</button>
+  <img id="lightbox-img" src="" alt="Foto de avance">
+</div>
+
+<!-- FILE INPUT (oculto) -->
+<input type="file" id="upload-input" style="display:none;" accept="image/*" multiple onchange="handleUpload(event)">
+
+<script>
+/* =====================================================
+   CONFIGURACIÓN
+   ===================================================== */
+const PWD       = 'obra2026';
+const APP_TITLE = 'Panel de Avance de Obra';
+const SB_URL    = 'https://txlnrmnfdsxtvkhrrqli.supabase.co';
+const SB_KEY    = 'sb_publishable_VT-aZicNf3vXBxNjL6m1Pw_qvOdwsFv';
+const BUCKET    = 'fotos-tareas';
+const SB_H      = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
+
+/* ================================================
+   SEGURIDAD — validaciones en runtime
+   ================================================ */
+// Bloquear si la página se carga dentro de un iframe externo
+if (window.self !== window.top) {
+  document.body.innerHTML = '<div style="padding:40px;font-family:sans-serif;color:#E51863;">⛔ Acceso no permitido en iframe.</div>';
+  throw new Error('Iframe blocker');
+}
+
+// Wrapper seguro para fetch — solo permite llamadas al dominio de Supabase
+const safeFetch = (url, opts) => {
+  if (!url.startsWith(SB_URL)) throw new Error('Origen no permitido: ' + url);
+  return fetch(url, opts);
+};
+
+// Rate limiting simple — máx 30 operaciones de escritura por minuto
+const _rl = { count: 0, ts: Date.now() };
+function checkRateLimit() {
+  const now = Date.now();
+  if (now - _rl.ts > 60000) { _rl.count = 0; _rl.ts = now; }
+  if (++_rl.count > 30) throw new Error('Demasiadas operaciones. Esperá un momento.');
+}
+
+/* =====================================================
+   ESTADO
+   ===================================================== */
+let tasks = [];
+
+/* =====================================================
+   ESTADO DE LA APP
+   ===================================================== */
+const MONTHS_SHORT = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+let ganttYear = new Date().getFullYear();
+let isAdmin = false;
+let selectedId = null;
+let editingId = null;
+let activeTab = 'antes';
+let uploadTarget = null;
+
+/* =====================================================
+   HELPERS
+   ===================================================== */
+function mkKey(y, m) { return `${y}-${String(m+1).padStart(2,'0')}`; }
+
+function mIdx(key) {
+  if (!key) return -1;
+  const [y, m] = key.split('-').map(Number);
+  if (y !== ganttYear) return -1;
+  return m - 1;
+}
+
+function fmtM(key) {
+  if (!key) return '—';
+  const [y, m] = key.split('-').map(Number);
+  return MONTHS_SHORT[m-1] + '-' + String(y).slice(2);
+}
+
+function taskStatus(t) {
+  if (t.pct === 100) return 'done';
+  if (!t.real_ini) return 'none';
+  if (t.pip_fin && t.real_fin && t.real_fin > t.pip_fin) return 'late';
+  if (t.pip_fin && !t.real_fin) {
+    const today = new Date();
+    const planEnd = new Date(t.pip_fin + '-28');
+    if (today > planEnd) return 'late';
+  }
+  return 'progress';
+}
+
+function statusColor(s) {
+  return { done:'#1a7a3c', progress:'#752784', late:'#E51863', none:'#b0b8cc' }[s];
+}
+
+function statusLabel(s) {
+  return { done:'Completado', progress:'En curso', late:'Retrasado', none:'Sin iniciar' }[s];
+}
+
+function pillStyle(s) {
+  return {
+    done:     'background:#e6f4ec;color:#1a7a3c',
+    progress: 'background:#f3eaf7;color:#752784',
+    late:     'background:#fde8ee;color:#E51863',
+    none:     'background:#f0f0f0;color:#888'
+  }[s];
+}
+
+/* =====================================================
+   GANTT
+   ===================================================== */
+function changeYear(d) {
+  ganttYear += d;
+  document.getElementById('year-label').textContent = ganttYear;
+  renderMonthsHeader();
+  renderGantt();
+}
+
+function renderMonthsHeader() {
+  const yr = String(ganttYear).slice(2);
+  document.getElementById('months-header').innerHTML =
+    MONTHS_SHORT.map(m => `<div class="grid-month">${m}-${yr}</div>`).join('');
+}
+
+function renderGantt() {
+  const c = document.getElementById('gantt-rows');
+  c.innerHTML = '';
+  const pW = 100 / 12;
+
+  const yearTasks = tasks.filter(t => {
+    const keys = [t.pip_ini, t.pip_fin, t.real_ini, t.real_fin].filter(Boolean);
+    return keys.some(k => k.startsWith(String(ganttYear)));
+  });
+
+  if (!yearTasks.length) {
+    c.innerHTML = `<div class="no-tasks">No hay tareas para el año ${ganttYear}</div>`;
+    updateKPIs([]);
+    return;
+  }
+
+  yearTasks.forEach(t => {
+    const st = taskStatus(t);
+    const wrap = document.createElement('div');
+    wrap.className = 'gantt-row-wrap' + (selectedId === t.id ? ' sel' : '');
+    wrap.onclick = () => selectTask(t.id);
+
+    // Nombre
+    const nameCell = document.createElement('div');
+    nameCell.className = 'task-name-cell';
+    nameCell.innerHTML = `
+      <div class="status-dot" style="background:${statusColor(st)};"></div>
+      <span class="task-name-text">${t.nombre}</span>`;
+
+    // Timeline
+    const tl = document.createElement('div');
+    tl.className = 'gantt-timeline';
+
+    // Barra planificada
+    if (t.pip_ini && t.pip_fin) {
+      const yrStr = String(ganttYear);
+      const pipIniInYear = t.pip_ini.startsWith(yrStr);
+      const pipFinInYear = t.pip_fin.startsWith(yrStr);
+      const s2 = pipIniInYear ? mIdx(t.pip_ini) : 0;
+      const e2 = pipFinInYear ? mIdx(t.pip_fin) : 11;
+      const visible = pipIniInYear || pipFinInYear ||
+        (t.pip_ini < yrStr + '-01' && t.pip_fin > yrStr + '-12');
+      if (visible && s2 >= 0 && e2 >= 0) {
+        const b = document.createElement('div');
+        b.style.cssText = `position:absolute;left:${s2*pW}%;width:${(e2-s2+1)*pW}%;height:12px;top:4px;background:#74B5DF44;border:1px solid #74B5DF;border-radius:3px;`;
+        tl.appendChild(b);
+      }
+    }
+
+    // Barra real
+    if (t.real_ini) {
+      const yrStr = String(ganttYear);
+      const s = mIdx(t.real_ini);
+      const eKey = t.real_fin || (t.pct > 0 && t.pct < 100 ? mkKey(ganttYear, new Date().getMonth()) : t.real_ini);
+      const e = mIdx(eKey);
+      const s2 = t.real_ini.startsWith(yrStr) ? Math.max(s, 0) : 0;
+      const e2 = eKey && eKey.startsWith(yrStr) ? Math.max(e, s2) : 11;
+      const showReal = t.real_ini.startsWith(yrStr) ||
+        (t.real_fin && t.real_fin.startsWith(yrStr)) ||
+        (!t.real_fin && t.pct > 0 && t.real_ini < yrStr + '-01');
+      if (showReal) {
+        const b = document.createElement('div');
+        b.style.cssText = `position:absolute;left:${s2*pW}%;width:${(e2-s2+1)*pW}%;height:10px;top:22px;background:${statusColor(st)};border-radius:3px;`;
+        tl.appendChild(b);
+        const pct = document.createElement('div');
+        pct.style.cssText = `position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:600;color:var(--navy);`;
+        pct.textContent = t.pct + '%';
+        tl.appendChild(pct);
+      }
+    }
+
+    // Líneas de grilla
+    for (let i = 1; i < 12; i++) {
+      const l = document.createElement('div');
+      l.style.cssText = `position:absolute;left:${i*pW}%;top:0;bottom:0;border-left:1px solid #e8ecf4;`;
+      tl.appendChild(l);
+    }
+
+    wrap.appendChild(nameCell);
+    wrap.appendChild(tl);
+    c.appendChild(wrap);
+  });
+
+  updateKPIs(yearTasks);
+}
+
+function updateKPIs(arr) {
+  const list = arr || tasks;
+  const done = list.filter(t => taskStatus(t) === 'done').length;
+  const prog = list.filter(t => taskStatus(t) === 'progress').length;
+  const late = list.filter(t => taskStatus(t) === 'late').length;
+  const avg  = list.length ? Math.round(list.reduce((a,t) => a+t.pct, 0) / list.length) : 0;
+  document.getElementById('kpi-total').textContent = list.length;
+  document.getElementById('kpi-done').textContent  = done;
+  document.getElementById('kpi-prog').textContent  = prog;
+  document.getElementById('kpi-late').textContent  = late;
+  document.getElementById('kpi-pct').textContent   = avg + '%';
+}
+
+/* =====================================================
+   DETALLE DE TAREA
+   ===================================================== */
+function selectTask(id) {
+  selectedId = selectedId === id ? null : id;
+  activeTab = 'antes';
+  renderGantt();
+  renderDetail();
+}
+
+function renderDetail() {
+  const panel = document.getElementById('detail-panel');
+  if (!selectedId) { panel.style.display = 'none'; return; }
+  const t = tasks.find(x => x.id === selectedId);
+  if (!t) { panel.style.display = 'none'; return; }
+  panel.style.display = 'block';
+
+  const st = taskStatus(t);
+  const sc = statusColor(st);
+  const fotos = t.fotos[activeTab] || [];
+
+  const thumbs = fotos.map((f) => `
+    <div class="photo-thumb">
+      <img src="${f.url}" alt="foto" onclick="openLightbox('${f.url}', event)">
+      <button class="del-btn" onclick="deletePhoto(${f.id}, event)" title="Eliminar foto">&#215;</button>
+    </div>`).join('');
+
+  const addBtn = `
+    <div class="add-photo-btn" onclick="triggerUpload(${t.id},'${activeTab}')">
+      <div class="add-photo-inner">
+        <div class="add-photo-icon">&#128247;</div>
+        <div class="add-photo-label">Agregar fotos</div>
+        <div class="add-photo-sub">una o varias</div>
+      </div>
+    </div>`;
+
+  panel.innerHTML = `
+    <div class="detail-title">
+      <div class="status-dot" style="background:${sc};width:12px;height:12px;"></div>
+      ${t.nombre}
+      <span class="status-pill" style="margin-left:auto;${pillStyle(st)}">${statusLabel(st)}</span>
+    </div>
+    <div class="pct-bar-wrap">
+      <div class="pct-bar-fill" style="width:${t.pct}%;background:${sc};"></div>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-field"><div class="detail-field-label">Plan — inicio</div><div class="detail-field-val">${fmtM(t.pip_ini)}</div></div>
+      <div class="detail-field"><div class="detail-field-label">Plan — fin</div><div class="detail-field-val">${fmtM(t.pip_fin)}</div></div>
+      <div class="detail-field"><div class="detail-field-label">Real — inicio</div><div class="detail-field-val">${fmtM(t.real_ini)}</div></div>
+      <div class="detail-field"><div class="detail-field-label">Real — fin</div><div class="detail-field-val">${fmtM(t.real_fin)}</div></div>
+    </div>
+    <div class="photos-header">
+      <div class="section-title" style="margin:0;">Registro fotográfico</div>
+      <div class="photos-tabs">
+        <div class="photo-tab ${activeTab==='antes'?'active':''}" onclick="switchTab('antes')">
+          Antes (${t.fotos.antes.length})
+        </div>
+        <div class="photo-tab ${activeTab==='despues'?'active':''}" onclick="switchTab('despues')">
+          Después (${t.fotos.despues.length})
+        </div>
+      </div>
+    </div>
+    <div class="photos-gallery">${thumbs}${addBtn}</div>`;
+}
+
+function switchTab(tab) { activeTab = tab; renderDetail(); }
+
+/* =====================================================
+   FOTOS — manejadas por Supabase (ver arriba)
+   ===================================================== */
+
+
+function openLightbox(src, e) {
+  e.stopPropagation();
+  document.getElementById('lightbox-img').src = src;
+  document.getElementById('lightbox').style.display = 'flex';
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').style.display = 'none';
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeLightbox();
+});
+
+/* =====================================================
+   ADMIN — ABML DE TAREAS
+   ===================================================== */
+function renderTaskTable() {
+  document.getElementById('task-table-body').innerHTML = tasks.map(t => {
+    const st = taskStatus(t);
+    return `<tr>
+      <td>${t.nombre}</td>
+      <td>${fmtM(t.pip_ini)}</td><td>${fmtM(t.pip_fin)}</td>
+      <td>${fmtM(t.real_ini)}</td><td>${fmtM(t.real_fin)}</td>
+      <td><span class="pct-pill" style="${pillStyle(st)}">${t.pct}%</span></td>
+      <td><span style="font-size:11px;font-weight:600;color:${statusColor(st)};">${statusLabel(st)}</span></td>
+      <td style="display:flex;gap:6px;align-items:center;">
+        <button class="edit-btn" onclick="editTask(${t.id})">Editar</button>
+        <button class="del-row-btn" onclick="deleteTask(${t.id})" title="Eliminar tarea">&#128465;</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function editTask(id) {
+  const t = tasks.find(x => x.id === id);
+  if (!t) return;
+  editingId = id;
+  document.getElementById('form-mode-title').textContent = 'Editar tarea';
+  document.getElementById('f-nombre').value   = t.nombre;
+  document.getElementById('f-pip-ini').value  = t.pip_ini  || '';
+  document.getElementById('f-pip-fin').value  = t.pip_fin  || '';
+  document.getElementById('f-real-ini').value = t.real_ini || '';
+  document.getElementById('f-real-fin').value = t.real_fin || '';
+  document.getElementById('f-pct').value      = t.pct;
+  document.getElementById('f-nombre').focus();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+
+/* =====================================================
+   SUPABASE — CRUD TAREAS
+   ===================================================== */
+async function loadTasks() {
+  showToast('Cargando tareas...', 'info');
+  try {
+    const r = await safeFetch(`${SB_URL}/rest/v1/tareas?select=*&order=orden.asc,id.asc`, { headers: SB_H });
+    if (!r.ok) throw new Error(await r.text());
+    const rows = await r.json();
+    const r2 = await safeFetch(`${SB_URL}/rest/v1/fotos?select=*`, { headers: SB_H });
+    const fotosAll = r2.ok ? await r2.json() : [];
+    tasks = rows.map(t => ({
+      ...t,
+      fotos: {
+        antes:   fotosAll.filter(f => f.tarea_id === t.id && f.tipo === 'antes').map(f => ({ url: f.url, id: f.id, nombre: f.nombre })),
+        despues: fotosAll.filter(f => f.tarea_id === t.id && f.tipo === 'despues').map(f => ({ url: f.url, id: f.id, nombre: f.nombre })),
+      }
+    }));
+    renderGantt();
+    renderMonthsHeader();
+    if (document.getElementById('view-admin').style.display !== 'none') renderTaskTable();
+    showToast('Tareas cargadas', 'ok');
+  } catch(e) { showToast('Error al cargar: ' + e.message, 'err'); }
+}
+
+async function saveTask() {
+  const nombre = document.getElementById('f-nombre').value.trim();
+  if (!nombre) { alert('Ingresá el nombre de la tarea'); return; }
+  const data = {
+    nombre,
+    pip_ini:  document.getElementById('f-pip-ini').value  || null,
+    pip_fin:  document.getElementById('f-pip-fin').value  || null,
+    real_ini: document.getElementById('f-real-ini').value || null,
+    real_fin: document.getElementById('f-real-fin').value || null,
+    pct:      parseInt(document.getElementById('f-pct').value) || 0,
+  };
+  try {
+    checkRateLimit();
+    let r;
+    if (editingId) {
+      r = await safeFetch(`${SB_URL}/rest/v1/tareas?id=eq.${editingId}`, { method: 'PATCH', headers: SB_H, body: JSON.stringify(data) });
+    } else {
+      r = await safeFetch(`${SB_URL}/rest/v1/tareas`, { method: 'POST', headers: SB_H, body: JSON.stringify(data) });
+    }
+    if (!r.ok) throw new Error(await r.text());
+    showToast(editingId ? 'Tarea actualizada ✓' : 'Tarea creada ✓', 'ok');
+    resetForm();
+    await loadTasks();
+    if (selectedId) renderDetail();
+  } catch(e) { showToast('Error al guardar: ' + e.message, 'err'); }
+}
+
+async function deleteTask(id) {
+  const t = tasks.find(x => x.id === id);
+  if (!t) return;
+  if (!confirm(`¿Eliminar la tarea "${t.nombre}"?\nTambién se eliminarán todas sus fotos.`)) return;
+  try {
+    checkRateLimit();
+    const r = await safeFetch(`${SB_URL}/rest/v1/tareas?id=eq.${id}`, { method: 'DELETE', headers: SB_H });
+    if (!r.ok) throw new Error(await r.text());
+    if (selectedId === id) { selectedId = null; document.getElementById('detail-panel').style.display = 'none'; }
+    showToast('Tarea eliminada', 'ok');
+    await loadTasks();
+  } catch(e) { showToast('Error al eliminar: ' + e.message, 'err'); }
+}
+
+/* =====================================================
+   SUPABASE — FOTOS
+   ===================================================== */
+async function handleUpload(e) {
+  const files = Array.from(e.target.files);
+  if (!files.length || !uploadTarget) return;
+  e.target.value = '';
+
+  // Validar tipo y tamaño
+  const MAX_MB   = 10;
+  const ALLOWED  = ['image/jpeg','image/png','image/webp','image/gif'];
+  for (const f of files) {
+    if (!ALLOWED.includes(f.type))              { showToast(`Tipo no permitido: ${f.name}`, 'err'); return; }
+    if (f.size > MAX_MB * 1024 * 1024)          { showToast(`Archivo muy grande (máx ${MAX_MB}MB): ${f.name}`, 'err'); return; }
+  }
+
+  showToast(`Subiendo ${files.length} foto(s)...`, 'info');
+  let ok = 0;
+  for (const file of files) {
+    try {
+      checkRateLimit();
+      const ext  = file.name.split('.').pop().toLowerCase().replace(/[^a-z0-9]/g,'');
+      const path = `tarea_${uploadTarget.id}/${uploadTarget.tipo}_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const uploadRes = await fetch(`${SB_URL}/storage/v1/object/${BUCKET}/${path}`, {
+        method: 'POST',
+        headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': file.type },
+        body: file,
+      });
+      if (!uploadRes.ok) throw new Error(await uploadRes.text());
+      const pubUrl = `${SB_URL}/storage/v1/object/public/${BUCKET}/${path}`;
+      const r = await safeFetch(`${SB_URL}/rest/v1/fotos`, {
+        method: 'POST', headers: SB_H,
+        body: JSON.stringify({ tarea_id: uploadTarget.id, tipo: uploadTarget.tipo, url: pubUrl, nombre: file.name }),
+      });
+      if (!r.ok) throw new Error(await r.text());
+      ok++;
+    } catch(err) { showToast('Error subiendo: ' + err.message, 'err'); }
+  }
+  if (ok > 0) { showToast(`${ok} foto(s) subida(s) ✓`, 'ok'); await loadTasks(); renderDetail(); }
+}
+
+async function deletePhoto(fotoId, e) {
+  e.stopPropagation();
+  if (!confirm('¿Eliminar esta foto?')) return;
+  try {
+    checkRateLimit();
+    const r = await safeFetch(`${SB_URL}/rest/v1/fotos?id=eq.${fotoId}`, { method: 'DELETE', headers: SB_H });
+    if (!r.ok) throw new Error(await r.text());
+    showToast('Foto eliminada', 'ok');
+    await loadTasks();
+    renderDetail();
+  } catch(e) { showToast('Error: ' + e.message, 'err'); }
+}
+
+
+/* =====================================================
+   TOAST NOTIFICACIONES
+   ===================================================== */
+function showToast(msg, type='ok') {
+  let t = document.getElementById('toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.style.cssText = 'position:fixed;bottom:24px;right:24px;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;transition:opacity 0.3s;box-shadow:0 4px 12px rgba(0,0,0,0.15);';
+    document.body.appendChild(t);
+  }
+  const colors = { ok:'background:#1a7a3c;color:#fff', err:'background:#E51863;color:#fff', info:'background:#212B54;color:#fff' };
+  t.style.cssText += colors[type] || colors.ok;
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.style.opacity = '0', 3000);
+}
+
+
+
+/* =====================================================
+   LOGIN / SESIÓN
+   ===================================================== */
+function tryAdmin() {
+  if (isAdmin) { setView('admin'); return; }
+  document.getElementById('login-overlay').style.display = 'flex';
+  setTimeout(() => document.getElementById('pwd-input').focus(), 80);
+}
+
+function doLogin() {
+  const v = document.getElementById('pwd-input').value;
+  if (v === PWD) {
+    isAdmin = true;
+    document.getElementById('login-overlay').style.display = 'none';
+    document.getElementById('pwd-input').value = '';
+    document.getElementById('login-err').textContent = '';
+    setView('admin');
+  } else {
+    const err = document.getElementById('login-err');
+    err.textContent = 'Contraseña incorrecta. Intentá de nuevo.';
+    document.getElementById('pwd-input').value = '';
+    document.getElementById('pwd-input').focus();
+  }
+}
+
+function closeLogin() {
+  document.getElementById('login-overlay').style.display = 'none';
+  document.getElementById('pwd-input').value = '';
+  document.getElementById('login-err').textContent = '';
+}
+
+function logout() {
+  isAdmin = false;
+  setView('dashboard');
+}
+
+/* =====================================================
+   NAVEGACIÓN ENTRE VISTAS
+   ===================================================== */
+function setView(v) {
+  document.getElementById('view-dashboard').style.display = v === 'dashboard' ? '' : 'none';
+  document.getElementById('view-admin').style.display     = v === 'admin'     ? '' : 'none';
+  document.getElementById('btn-dashboard').className = 'toggle-btn' + (v === 'dashboard' ? ' active' : '');
+  document.getElementById('btn-admin').className     = 'toggle-btn' + (v === 'admin'     ? ' active' : '');
+  if (v === 'admin') renderTaskTable();
+}
+
+/* =====================================================
+   RELOJ
+   ===================================================== */
+function tick() {
+  const n = new Date();
+  document.getElementById('clock').textContent =
+    n.toLocaleDateString('es-AR', { weekday:'long', day:'numeric', month:'long', year:'numeric' }) +
+    ' — ' + n.toLocaleTimeString('es-AR');
+}
+
+/* =====================================================
+   EXPORTAR PDF — PLOTTER
+   ===================================================== */
+let selectedPaper = 'A1';
+
+// Dimensiones en mm (landscape)
+const PAPER_SIZES = {
+  A0: { w: 1189, h: 841 },
+  A1: { w: 841,  h: 594 },
+  A3: { w: 420,  h: 297 },
+};
+
+function openExportModal() {
+  document.getElementById('exp-year-label').textContent = ganttYear;
+  document.getElementById('export-status').textContent = '';
+  document.getElementById('btn-do-export').disabled = false;
+  document.getElementById('btn-do-export').textContent = 'Generar PDF';
+  // default A1
+  document.querySelector('input[value="A1"]').checked = true;
+  selectedPaper = 'A1';
+  document.getElementById('export-overlay').style.display = 'flex';
+}
+
+function closeExportModal() {
+  document.getElementById('export-overlay').style.display = 'none';
+}
+
+function selectPaper(size) {
+  selectedPaper = size;
+}
+
+async function doExportPDF() {
+  const btn = document.getElementById('btn-do-export');
+  const status = document.getElementById('export-status');
+  btn.disabled = true;
+  btn.textContent = 'Generando...';
+  status.textContent = 'Cargando librerías...';
+
+  // Cargar jsPDF y html2canvas dinámicamente si no están
+  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+
+  status.textContent = 'Renderizando Gantt...';
+
+  const paper = PAPER_SIZES[selectedPaper];
+  // px a 150 DPI para buena calidad en plotter
+  const DPI = 150;
+  const MM_TO_PX = DPI / 25.4;
+  const canvasW = Math.round(paper.w * MM_TO_PX);
+  const canvasH = Math.round(paper.h * MM_TO_PX);
+
+  // Crear canvas offscreen con el Gantt dibujado a mano
+  const canvas = document.createElement('canvas');
+  canvas.width  = canvasW;
+  canvas.height = canvasH;
+  const ctx = canvas.getContext('2d');
+
+  // Fondo blanco
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvasW, canvasH);
+
+  // Colores
+  const C = {
+    navy:   '#212B54', indigo: '#273475', sky:    '#74B5DF',
+    done:   '#1a7a3c', prog:   '#752784', late:   '#E51863',
+    none:   '#b0b8cc', border: '#d8dde8', muted:  '#7a85a8',
+    bg:     '#f4f6fb',
+  };
+
+  const pad = Math.round(12 * MM_TO_PX);
+  const yr  = String(ganttYear).slice(2);
+
+  // --- HEADER ---
+  const hdrH = Math.round(18 * MM_TO_PX);
+  ctx.fillStyle = C.navy;
+  ctx.fillRect(0, 0, canvasW, hdrH);
+
+  const titleSize = Math.round(7 * MM_TO_PX);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `bold ${titleSize}px Arial`;
+  ctx.fillText('PANEL DE AVANCE DE OBRA — GANTT ' + ganttYear, pad, hdrH * 0.65);
+
+  const now = new Date().toLocaleDateString('es-AR', {day:'2-digit', month:'long', year:'numeric'});
+  ctx.font = `${Math.round(3.5 * MM_TO_PX)}px Arial`;
+  ctx.fillStyle = '#74B5DF';
+  ctx.fillText('Generado el ' + now, pad, hdrH * 0.88);
+
+  // Línea acento sky
+  ctx.fillStyle = C.sky;
+  ctx.fillRect(0, hdrH, canvasW, Math.round(1.5 * MM_TO_PX));
+
+  // --- GANTT BODY ---
+  const yearTasks = tasks.filter(t => {
+    const keys = [t.pip_ini, t.pip_fin, t.real_ini, t.real_fin].filter(Boolean);
+    return keys.some(k => k.startsWith(String(ganttYear)));
+  });
+
+  const bodyY   = hdrH + Math.round(1.5 * MM_TO_PX);
+  const nameColW = Math.round(65 * MM_TO_PX);
+  const timelineW = canvasW - nameColW - pad * 2;
+  const colX    = pad + nameColW;
+  const monthW  = timelineW / 12;
+
+  // Cabecera meses
+  const mHdrH = Math.round(8 * MM_TO_PX);
+  ctx.fillStyle = C.bg;
+  ctx.fillRect(pad, bodyY, canvasW - pad * 2, mHdrH);
+
+  // Cabecera "Tarea"
+  ctx.fillStyle = C.bg;
+  ctx.fillRect(pad, bodyY, nameColW, mHdrH);
+
+  const mLabelSize = Math.round(3.2 * MM_TO_PX);
+  ctx.font = `bold ${mLabelSize}px Arial`;
+  ctx.fillStyle = C.muted;
+  ctx.fillText('TAREA', pad + Math.round(3 * MM_TO_PX), bodyY + mHdrH * 0.65);
+
+  MONTHS_SHORT.forEach((m, i) => {
+    const mx = colX + i * monthW;
+    // línea separadora
+    ctx.strokeStyle = C.border;
+    ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(mx, bodyY); ctx.lineTo(mx, bodyY + mHdrH); ctx.stroke();
+    // label
+    ctx.fillStyle = C.muted;
+    ctx.font = `bold ${mLabelSize}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.fillText(m + '-' + yr, mx + monthW / 2, bodyY + mHdrH * 0.65);
+  });
+  ctx.textAlign = 'left';
+
+  // Línea bajo cabecera
+  ctx.strokeStyle = C.border;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(pad, bodyY + mHdrH);
+  ctx.lineTo(canvasW - pad, bodyY + mHdrH);
+  ctx.stroke();
+
+  // Filas de tareas
+  const rowH    = Math.round(12 * MM_TO_PX);
+  const barPlanH = Math.round(3.5 * MM_TO_PX);
+  const barRealH = Math.round(3 * MM_TO_PX);
+  const nameSize = Math.round(3.8 * MM_TO_PX);
+  const pctSize  = Math.round(3 * MM_TO_PX);
+
+  yearTasks.forEach((t, ri) => {
+    const ry = bodyY + mHdrH + ri * rowH;
+    const st = taskStatus(t);
+    const sc = { done: C.done, progress: C.prog, late: C.late, none: C.none }[st];
+
+    // Fondo alternado
+    if (ri % 2 === 1) {
+      ctx.fillStyle = '#f9fafc';
+      ctx.fillRect(pad, ry, canvasW - pad * 2, rowH);
+    }
+
+    // Línea separadora
+    ctx.strokeStyle = C.border;
+    ctx.lineWidth = 0.4;
+    ctx.beginPath(); ctx.moveTo(pad, ry + rowH); ctx.lineTo(canvasW - pad, ry + rowH); ctx.stroke();
+
+    // Punto de estado
+    const dotR = Math.round(2.2 * MM_TO_PX);
+    const dotX = pad + dotR + Math.round(2 * MM_TO_PX);
+    const dotY = ry + rowH / 2;
+    ctx.fillStyle = sc;
+    ctx.beginPath(); ctx.arc(dotX, dotY, dotR, 0, Math.PI * 2); ctx.fill();
+
+    // Nombre tarea
+    ctx.fillStyle = C.navy;
+    ctx.font = `${nameSize}px Arial`;
+    const maxNameW = nameColW - dotR * 2 - Math.round(10 * MM_TO_PX);
+    let nombre = t.nombre;
+    while (ctx.measureText(nombre).width > maxNameW && nombre.length > 3) {
+      nombre = nombre.slice(0, -1);
+    }
+    if (nombre !== t.nombre) nombre += '…';
+    ctx.fillText(nombre, dotX + dotR + Math.round(3 * MM_TO_PX), dotY + nameSize * 0.35);
+
+    // Línea separadora nombre/timeline
+    ctx.strokeStyle = C.border;
+    ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(pad + nameColW, ry); ctx.lineTo(pad + nameColW, ry + rowH); ctx.stroke();
+
+    // Barras planificadas
+    function mIdxLocal(key) {
+      if (!key) return -1;
+      const [y, mo] = key.split('-').map(Number);
+      if (y !== ganttYear) return -1;
+      return mo - 1;
+    }
+
+    if (t.pip_ini && t.pip_fin) {
+      const yrStr = String(ganttYear);
+      const s2 = t.pip_ini.startsWith(yrStr) ? mIdxLocal(t.pip_ini) : 0;
+      const e2 = t.pip_fin.startsWith(yrStr) ? mIdxLocal(t.pip_fin) : 11;
+      const visible = t.pip_ini.startsWith(yrStr) || t.pip_fin.startsWith(yrStr) ||
+        (t.pip_ini < yrStr + '-01' && t.pip_fin > yrStr + '-12');
+      if (visible && s2 >= 0 && e2 >= 0) {
+        const bx = colX + s2 * monthW + 2;
+        const bw = (e2 - s2 + 1) * monthW - 4;
+        const by = ry + rowH / 2 - rowH * 0.35 - barPlanH / 2;
+        ctx.fillStyle = '#74B5DF33';
+        ctx.strokeStyle = '#74B5DF';
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        ctx.roundRect(bx, by, bw, barPlanH, 2);
+        ctx.fill(); ctx.stroke();
+      }
+    }
+
+    // Barra real
+    if (t.real_ini) {
+      const yrStr = String(ganttYear);
+      const s = mIdxLocal(t.real_ini);
+      const eKey = t.real_fin || (t.pct > 0 && t.pct < 100 ? (yrStr + '-' + String(new Date().getMonth() + 1).padStart(2,'0')) : t.real_ini);
+      const e = mIdxLocal(eKey);
+      const s2 = t.real_ini.startsWith(yrStr) ? Math.max(s, 0) : 0;
+      const e2 = eKey && eKey.startsWith(yrStr) ? Math.max(e, s2) : 11;
+      const showReal = t.real_ini.startsWith(yrStr) ||
+        (t.real_fin && t.real_fin.startsWith(yrStr)) ||
+        (!t.real_fin && t.pct > 0 && t.real_ini < yrStr + '-01');
+      if (showReal) {
+        const bx = colX + s2 * monthW + 2;
+        const bw = (e2 - s2 + 1) * monthW - 4;
+        const by = ry + rowH / 2 + 1;
+        ctx.fillStyle = sc;
+        ctx.beginPath();
+        ctx.roundRect(bx, by, bw, barRealH, 2);
+        ctx.fill();
+
+        // % label
+        ctx.fillStyle = C.navy;
+        ctx.font = `bold ${pctSize}px Arial`;
+        ctx.textAlign = 'right';
+        ctx.fillText(t.pct + '%', colX + timelineW - Math.round(3 * MM_TO_PX), dotY + pctSize * 0.35);
+        ctx.textAlign = 'left';
+      }
+    }
+
+    // Líneas grilla meses
+    MONTHS_SHORT.forEach((_, i) => {
+      if (i === 0) return;
+      const mx = colX + i * monthW;
+      ctx.strokeStyle = '#e8ecf4';
+      ctx.lineWidth = 0.3;
+      ctx.beginPath(); ctx.moveTo(mx, ry); ctx.lineTo(mx, ry + rowH); ctx.stroke();
+    });
+  });
+
+  // Borde exterior gantt
+  const ganttH = mHdrH + yearTasks.length * rowH;
+  ctx.strokeStyle = C.border;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(pad, bodyY, canvasW - pad * 2, ganttH);
+
+  // --- LEYENDA ---
+  const legendY = bodyY + ganttH + Math.round(6 * MM_TO_PX);
+  const legendItems = [
+    { label: 'Planificado', color: '#74B5DF', border: true },
+    { label: 'Completado',  color: C.done },
+    { label: 'En curso',    color: C.prog },
+    { label: 'Retrasado',   color: C.late },
+    { label: 'Sin iniciar', color: C.none },
+  ];
+  const lItemW = Math.round(35 * MM_TO_PX);
+  const lBarW  = Math.round(8 * MM_TO_PX);
+  const lBarH  = Math.round(3 * MM_TO_PX);
+  const lSize  = Math.round(3.2 * MM_TO_PX);
+  legendItems.forEach((item, i) => {
+    const lx = pad + i * lItemW;
+    const ly = legendY;
+    if (item.border) {
+      ctx.fillStyle = item.color + '33';
+      ctx.strokeStyle = item.color;
+      ctx.lineWidth = 0.8;
+      ctx.beginPath(); ctx.roundRect(lx, ly, lBarW, lBarH, 1); ctx.fill(); ctx.stroke();
+    } else {
+      ctx.fillStyle = item.color;
+      ctx.beginPath(); ctx.roundRect(lx, ly, lBarW, lBarH, 1); ctx.fill();
+    }
+    ctx.fillStyle = C.muted;
+    ctx.font = `${lSize}px Arial`;
+    ctx.fillText(item.label, lx + lBarW + Math.round(2 * MM_TO_PX), ly + lBarH * 0.85);
+  });
+
+  // --- FOOTER ---
+  const footY = canvasH - Math.round(6 * MM_TO_PX);
+  ctx.strokeStyle = C.border;
+  ctx.lineWidth = 0.5;
+  ctx.beginPath(); ctx.moveTo(pad, footY - Math.round(3 * MM_TO_PX)); ctx.lineTo(canvasW - pad, footY - Math.round(3 * MM_TO_PX)); ctx.stroke();
+  ctx.fillStyle = C.muted;
+  ctx.font = `${Math.round(2.8 * MM_TO_PX)}px Arial`;
+  ctx.fillText('Panel de Avance de Obra  |  Formato ' + selectedPaper + '  |  ' + now, pad, footY);
+  ctx.textAlign = 'right';
+  ctx.fillText('Pág. 1', canvasW - pad, footY);
+  ctx.textAlign = 'left';
+
+  status.textContent = 'Generando PDF...';
+
+  // Convertir canvas a PDF con jsPDF
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [paper.w, paper.h] });
+  const imgData = canvas.toDataURL('image/jpeg', 0.95);
+  doc.addImage(imgData, 'JPEG', 0, 0, paper.w, paper.h);
+  doc.save('gantt-obra-' + ganttYear + '-' + selectedPaper + '.pdf');
+
+  status.textContent = '✓ PDF descargado';
+  btn.textContent = 'Generar PDF';
+  btn.disabled = false;
+}
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = src; s.onload = resolve; s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+
+function triggerUpload(id, tipo) {
+  uploadTarget = { id, tipo };
+  document.getElementById('upload-input').click();
+}
+
+renderMonthsHeader();
+tick();
+setInterval(tick, 1000);
+loadTasks();
+</script>
+</body>
+</html>

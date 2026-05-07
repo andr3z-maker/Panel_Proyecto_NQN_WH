@@ -1505,6 +1505,13 @@ function renderPresPhotoByQueue(queue) {
 }
 
 
+function triggerUpload(id, tipo) {
+  uploadTarget = { id, tipo };
+  const inp = document.getElementById('upload-input');
+  inp.value = '';
+  inp.click();
+}
+
 tick();
 setInterval(tick, 1000);
 loadTasks();

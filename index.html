@@ -164,6 +164,48 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text);min-
 .paper-opt:hover{border-color:var(--indigo);background:#f4f6fb;}
 .paper-opt input{flex-shrink:0;}
 
+/* PRESENTATION MODE */
+.btn-present{background:var(--violet);border:none;color:#fff;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-family:'Barlow',sans-serif;font-weight:600;display:flex;align-items:center;gap:6px;transition:all 0.15s;}
+.btn-present:hover{background:var(--purple);}
+.pres-overlay{position:fixed;inset:0;background:#0d1020;z-index:5000;display:flex;flex-direction:column;overflow:hidden;}
+.pres-header{background:var(--navy);padding:14px 32px;display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid var(--sky);flex-shrink:0;}
+.pres-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:#fff;letter-spacing:1.5px;text-transform:uppercase;}
+.pres-clock{font-size:13px;color:var(--sky);}
+.pres-close{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.25);color:#fff;padding:6px 16px;border-radius:6px;cursor:pointer;font-size:13px;font-family:'Barlow',sans-serif;}
+.pres-close:hover{background:var(--rose);border-color:var(--rose);}
+.pres-body{flex:1;display:grid;grid-template-columns:1fr 1fr;overflow:hidden;}
+.pres-left{padding:24px 20px 16px 28px;display:flex;flex-direction:column;gap:14px;border-right:1px solid #ffffff11;}
+.pres-right{padding:24px 28px 16px 20px;display:flex;flex-direction:column;gap:10px;}
+.pres-task-name{font-family:'Barlow Condensed',sans-serif;font-size:38px;font-weight:700;color:#fff;line-height:1.1;animation:fadeSlide 0.5s ease;}
+.pres-status-badge{display:inline-flex;align-items:center;gap:8px;padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;width:fit-content;}
+.pres-pct-label{font-family:'Barlow Condensed',sans-serif;font-size:64px;font-weight:700;line-height:1;animation:fadeSlide 0.5s ease;}
+.pres-pct-bar-wrap{background:rgba(255,255,255,0.1);border-radius:6px;height:10px;overflow:hidden;}
+.pres-pct-bar{height:100%;border-radius:6px;transition:width 1s ease;}
+.pres-dates{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.pres-date-field{background:rgba(255,255,255,0.06);border-radius:8px;padding:10px 14px;}
+.pres-date-label{font-size:10px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px;}
+.pres-date-val{font-size:15px;font-weight:600;color:#fff;}
+.pres-photos-label{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;}
+.pres-photo-tabs{display:flex;gap:8px;margin-bottom:8px;}
+.pres-photo-tab{padding:3px 14px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.4);}
+.pres-photo-tab.active{background:var(--navy);border-color:var(--sky);color:#fff;}
+.pres-photo-main{flex:1;border-radius:10px;overflow:hidden;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;position:relative;min-height:0;}
+.pres-photo-main img{width:100%;height:100%;object-fit:cover;animation:fadeIn 0.5s ease;}
+.pres-photo-empty{text-align:center;color:rgba(255,255,255,0.2);padding:20px;}
+.pres-photo-counter{position:absolute;bottom:10px;right:12px;background:rgba(0,0,0,0.55);color:#fff;font-size:11px;padding:3px 10px;border-radius:10px;}
+.pres-dots{display:flex;gap:8px;justify-content:center;padding:10px 0 6px;flex-shrink:0;}
+.pres-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.2);cursor:pointer;transition:all 0.3s;}
+.pres-dot.active{background:var(--sky);transform:scale(1.3);}
+.pres-progress-bar{height:3px;background:rgba(255,255,255,0.1);flex-shrink:0;}
+.pres-progress-fill{height:100%;background:var(--sky);}
+.pres-config-card{background:#fff;border-radius:12px;padding:28px;width:300px;box-shadow:0 8px 32px rgba(33,43,84,0.2);}
+.pres-config-title{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;color:var(--navy);margin-bottom:4px;}
+.pres-config-sub{font-size:12px;color:var(--muted);margin-bottom:18px;}
+.pres-config-field{margin-bottom:14px;}
+.pres-config-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:5px;}
+.pres-config-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:14px;color:var(--navy);font-family:'Barlow',sans-serif;}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
 
 @media (min-width:1400px){
   .app{max-width:100%;}
@@ -211,6 +253,9 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text);min-
         <button class="year-btn" onclick="changeYear(1)">&#8250;</button>
         <button class="btn-export" onclick="openExportModal()" title="Exportar PDF para plotter">
           <span>&#128438;</span> Exportar PDF
+        </button>
+        <button class="btn-present" id="btn-present" onclick="openPresentConfig()" title="Modo Presentación TV">
+          &#9654; Presentación
         </button>
       </div>
       <div class="gantt-wrap">
@@ -324,6 +369,43 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text);min-
       <button class="btn-primary" style="flex:1;" id="btn-do-export" onclick="doExportPDF()">Generar PDF</button>
     </div>
   </div>
+</div>
+
+<!-- PRESENTATION CONFIG MODAL -->
+<div id="pres-config-overlay" style="display:none;" class="login-overlay">
+  <div class="pres-config-card">
+    <div class="pres-config-title">Modo Presentación</div>
+    <div class="pres-config-sub">Configurá los tiempos y activá el modo TV</div>
+    <div class="pres-config-field">
+      <div class="pres-config-label">Segundos por tarea</div>
+      <input class="pres-config-input" id="pres-task-secs" type="number" min="3" max="60" value="10">
+    </div>
+    <div class="pres-config-field">
+      <div class="pres-config-label">Segundos por foto</div>
+      <input class="pres-config-input" id="pres-photo-secs" type="number" min="2" max="30" value="4">
+    </div>
+    <div style="display:flex;gap:8px;margin-top:18px;">
+      <button class="btn-secondary" style="flex:1;" onclick="closePresentConfig()">Cancelar</button>
+      <button class="btn-primary" style="flex:1;background:var(--violet);" onclick="startPresentation()">&#9654; Iniciar</button>
+    </div>
+  </div>
+</div>
+
+<!-- PRESENTATION OVERLAY -->
+<div id="pres-overlay" style="display:none;" class="pres-overlay">
+  <div class="pres-header">
+    <div class="pres-title" id="pres-header-title">Panel de Avance de Obra</div>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <div class="pres-clock" id="pres-clock">--</div>
+      <button class="pres-close" onclick="stopPresentation()">&#10005; Salir</button>
+    </div>
+  </div>
+  <div class="pres-progress-bar"><div class="pres-progress-fill" id="pres-progress-fill" style="width:0%;transition:none;"></div></div>
+  <div class="pres-body">
+    <div class="pres-left" id="pres-left"><!-- task info --></div>
+    <div class="pres-right" id="pres-right"><!-- photos --></div>
+  </div>
+  <div class="pres-dots" id="pres-dots"></div>
 </div>
 
 <!-- LOGIN OVERLAY -->
@@ -1246,12 +1328,183 @@ function loadScript(src) {
 }
 
 
-function triggerUpload(id, tipo) {
-  uploadTarget = { id, tipo };
-  document.getElementById('upload-input').click();
+/* =====================================================
+   MODO PRESENTACIÓN
+   ===================================================== */
+let presTaskSecs  = 10;
+let presPhotoSecs = 4;
+let presTaskIdx   = 0;
+let presPhotoIdx  = 0;
+let presPhotoType = 'antes';
+let presTaskTimer  = null;
+let presPhotoTimer = null;
+let presProgTimer  = null;
+let presClockTimer = null;
+let presTasks      = [];
+
+function openPresentConfig() {
+  document.getElementById('pres-config-overlay').style.display = 'flex';
+}
+function closePresentConfig() {
+  document.getElementById('pres-config-overlay').style.display = 'none';
 }
 
-renderMonthsHeader();
+function startPresentation() {
+  presTaskSecs  = Math.max(3,  parseInt(document.getElementById('pres-task-secs').value)  || 10);
+  presPhotoSecs = Math.max(2,  parseInt(document.getElementById('pres-photo-secs').value) || 4);
+  closePresentConfig();
+
+  // Filtrar tareas del año seleccionado
+  presTasks = tasks.filter(t => {
+    const keys = [t.pip_ini, t.pip_fin, t.real_ini, t.real_fin].filter(Boolean);
+    return keys.some(k => k.startsWith(String(ganttYear)));
+  });
+
+  if (!presTasks.length) { showToast('No hay tareas para mostrar en ' + ganttYear, 'err'); return; }
+
+  presTaskIdx  = 0;
+  document.getElementById('pres-overlay').style.display = 'flex';
+  document.getElementById('pres-header-title').textContent = 'Panel de Avance de Obra — ' + ganttYear;
+
+  renderPresDots();
+  showPresTask(0);
+
+  // Reloj presentación
+  presClockTimer = setInterval(() => {
+    const n = new Date();
+    document.getElementById('pres-clock').textContent =
+      n.toLocaleDateString('es-AR', {weekday:'long', day:'numeric', month:'long'}) + ' — ' + n.toLocaleTimeString('es-AR');
+  }, 1000);
+}
+
+function stopPresentation() {
+  clearInterval(presTaskTimer);
+  clearInterval(presPhotoTimer);
+  clearInterval(presProgTimer);
+  clearInterval(presClockTimer);
+  clearTimeout(presTaskTimer);
+  document.getElementById('pres-overlay').style.display = 'none';
+}
+
+function renderPresDots() {
+  document.getElementById('pres-dots').innerHTML = presTasks.map((_, i) =>
+    `<div class="pres-dot ${i===presTaskIdx?'active':''}" onclick="jumpPresTask(${i})"></div>`
+  ).join('');
+}
+
+function jumpPresTask(idx) {
+  clearInterval(presTaskTimer);
+  clearInterval(presPhotoTimer);
+  clearInterval(presProgTimer);
+  showPresTask(idx);
+}
+
+function showPresTask(idx) {
+  presTaskIdx  = idx;
+  presPhotoIdx = 0;
+  presPhotoType = 'antes';
+
+  const t  = presTasks[idx];
+  const st = taskStatus(t);
+  const sc = statusColor(st);
+  const sl = statusLabel(st);
+  const ps = pillStyle(st);
+
+  // Panel izquierdo — info de tarea
+  document.getElementById('pres-left').innerHTML = `
+    <div class="pres-task-name">${t.nombre}</div>
+    <div class="pres-status-badge" style="${ps};font-size:14px;">
+      <div style="width:10px;height:10px;border-radius:50%;background:${sc};"></div>
+      ${sl}
+    </div>
+    <div class="pres-pct-label" style="color:${sc};">${t.pct}%</div>
+    <div class="pres-pct-bar-wrap">
+      <div class="pres-pct-bar" style="width:${t.pct}%;background:${sc};"></div>
+    </div>
+    <div class="pres-dates">
+      <div class="pres-date-field"><div class="pres-date-label">Plan inicio</div><div class="pres-date-val">${fmtM(t.pip_ini)}</div></div>
+      <div class="pres-date-field"><div class="pres-date-label">Plan fin</div><div class="pres-date-val">${fmtM(t.pip_fin)}</div></div>
+      <div class="pres-date-field"><div class="pres-date-label">Real inicio</div><div class="pres-date-val">${fmtM(t.real_ini)}</div></div>
+      <div class="pres-date-field"><div class="pres-date-label">Real fin</div><div class="pres-date-val">${fmtM(t.real_fin)}</div></div>
+    </div>
+    <div style="font-size:12px;color:rgba(255,255,255,0.25);margin-top:auto;">
+      Tarea ${idx+1} de ${presTasks.length}
+    </div>`;
+
+  // Actualizar dots
+  renderPresDots();
+
+  // Mostrar foto inicial
+  renderPresPhoto(t);
+
+  // Timer fotos — rota entre antes/después y sus índices
+  clearInterval(presPhotoTimer);
+  const allPhotos = buildPhotoQueue(t);
+  if (allPhotos.length > 1) {
+    presPhotoTimer = setInterval(() => {
+      presPhotoIdx = (presPhotoIdx + 1) % allPhotos.length;
+      renderPresPhotoByQueue(allPhotos);
+    }, presPhotoSecs * 1000);
+  }
+
+  // Progress bar
+  clearInterval(presProgTimer);
+  const fill = document.getElementById('pres-progress-fill');
+  fill.style.transition = 'none';
+  fill.style.width = '0%';
+  setTimeout(() => {
+    fill.style.transition = `width ${presTaskSecs}s linear`;
+    fill.style.width = '100%';
+  }, 50);
+
+  // Timer tarea siguiente
+  clearTimeout(presTaskTimer);
+  presTaskTimer = setTimeout(() => {
+    const next = (presTaskIdx + 1) % presTasks.length;
+    showPresTask(next);
+  }, presTaskSecs * 1000);
+}
+
+function buildPhotoQueue(t) {
+  // Construye lista plana: primero todas las fotos "antes", luego "despues"
+  const queue = [];
+  (t.fotos.antes  || []).forEach(f => queue.push({ url: f.url, tipo: 'antes',   idx: queue.length }));
+  (t.fotos.despues|| []).forEach(f => queue.push({ url: f.url, tipo: 'despues', idx: queue.length }));
+  return queue;
+}
+
+function renderPresPhoto(t) {
+  const queue = buildPhotoQueue(t);
+  presPhotoIdx = 0;
+  renderPresPhotoByQueue(queue);
+}
+
+function renderPresPhotoByQueue(queue) {
+  const right = document.getElementById('pres-right');
+  const antesCount   = queue.filter(f => f.tipo==='antes').length;
+  const despuesCount = queue.filter(f => f.tipo==='despues').length;
+  const current      = queue[presPhotoIdx] || null;
+  const tipo         = current ? current.tipo : 'antes';
+
+  right.innerHTML = `
+    <div class="pres-photos-label">Registro fotográfico</div>
+    <div class="pres-photo-tabs">
+      <div class="pres-photo-tab ${tipo==='antes'?'active':''}">Antes (${antesCount})</div>
+      <div class="pres-photo-tab ${tipo==='despues'?'active':''}">Después (${despuesCount})</div>
+    </div>
+    <div class="pres-photo-main">
+      ${current
+        ? `<img src="${current.url}" alt="foto">
+           ${queue.length>1?`<div class="pres-photo-counter">${presPhotoIdx+1} / ${queue.length}</div>`:''}`
+        : `<div class="pres-photo-empty">
+             <div style="font-size:48px;margin-bottom:8px;">📷</div>
+             <div style="font-size:13px;">Sin fotos cargadas</div>
+           </div>`
+      }
+    </div>`;
+}
+
+
 tick();
 setInterval(tick, 1000);
 loadTasks();
